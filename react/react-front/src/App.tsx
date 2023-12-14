@@ -1,92 +1,9 @@
-import {FC, useEffect, useRef, useState } from 'react'
+import {useEffect, useRef, useState } from 'react'
 import './App.css'
 import useAuth from './hooks/useAuth';
 import axios from 'axios';
-import { IoIosAdd, IoIosClose} from "react-icons/io";
-import { InfinitySpin } from  'react-loader-spinner'
-
-interface InputItemProps {
-  token: string | null;
-  setList: React.Dispatch<React.SetStateAction<string[]|null>>;
-}
-
-
-const InputItem:FC<InputItemProps> = (props) => {
-
-  const [itemName, setItemName] = useState("");
-
-  const addItem = async () => {
-    const config = {
-      headers: {
-        authorization: `Bearer ${props.token}`,
-      },
-    };
-    const result = await axios.post(
-      "http://localhost:3000/add-item",
-      {newitem: itemName},
-      config
-    );
-    if (result.status === 200) {
-      props.setList((prev) => [...prev!, itemName]);
-    }
-    setItemName("");
-  }
-  return (
-    <div className="additem">
-      <input
-        type="text"
-        placeholder="New item"
-        onChange={(e) => setItemName(e.target.value)}
-        className="input"
-        value={itemName}
-      />
-      <IoIosAdd
-        size="2em"
-        onClick={() => addItem()}
-        className="item-btn"
-      />
-    </div>
-  )
-}
-
-interface ItemProps {
-  index: number;
-  token: string | null;
-  setList: React.Dispatch<React.SetStateAction<string[]|null>>;
-  list: string[];
-  name: string;
-}
-
-const Item:FC<ItemProps> = (props) => {
-
-  const removeItem = async () => {
-    const result = await axios.delete(`http://localhost:3000/remove-item/${props.index}`, {
-      headers: {
-        authorization: `Bearer ${props.token}`,
-      }
-    });
-    if (result.status === 200){
-      props.setList((prev) => {
-        const newList = [...prev!];
-        newList.splice(props.index, 1);
-        return newList;
-      });
-    }
-  }
-
-  return (
-    <div className="item">
-      <div className="item-name">
-        <p>{props.name}</p>
-      </div>
-      <IoIosClose
-        size="2em"
-        onClick={() => removeItem()}
-        className="item-btn"
-      />
-    </div>
-  )
-}
+import { InfinitySpin } from  'react-loader-spinner';
+import { Item, InputItem } from './components';
 
 const App = () => {
   const {isLogin, token, logout, name} = useAuth();
