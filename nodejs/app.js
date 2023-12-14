@@ -8,6 +8,7 @@ import cors from 'cors';
 const app = express();
 app.use(cors());
 app.options('*', cors());
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 const port = 3000;
 
@@ -33,45 +34,76 @@ app.use(keycloak.middleware(
 ));
 
 app.get('/', (req, res) => {
-    res.send('Public');
+    res.json({message: "Public route !"});
 });
 
 app.get('/get-items', keycloak.protect(), async (req, res) => {
     const userId = req.kauth.grant.access_token.content.sub.toString();
     try {
-        console.log("here");
-        const user = await User.findById(userId);
-        console.log();
+        const user = await User.findOne({ userId: "6da565e1-dc72-487c-9160-92c44e7ccb0e" });
         if (!user) {
-            return res.status(404).send('User not found');
+            return res.json({message: "User not found", error: error});
         }
-        return res.json({itemList: user.itemList || []});
+        return res.json({userId: userId, message:"List retrieved", data: user.itemList || []});
     } catch (error) {
         return res.json({message: "Get list error", error: error});
     }
 });
 
+app.post('/newUser', keycloak.protect(), async (req, res) => {
+    try{
+        const userId = req.kauth.grant.access_token.content.sub.toString();
+        const newuser = new User({userId: userId, itemList: []});
+        const result = await newuser.save();
+        return res.json({message: "User initialized", userId: userId, data: result});
+    } catch (error) {
+        return res.json({message: "Error creating user", error: error});
+    }
+});
+
+
 app.post('/add-item', keycloak.protect(), async (req, res) => {
-    const userId = req.kauth.grant.access_token.content.sub;
+    const userId = req.kauth.grant.access_token.content.sub.toString();
     const newitem = req.body?.newitem;
-    console.log(req.body)
     if (!newitem) {
-        return res.status(400).send('No item provided');
+        return res.json({message: "No item provided", error: error, userId: userId})
     }
     try {
-        const user = await User.findOneAndUpdate(
-          { _id: userId },
-          { $push: { itemList: newitem } },
-          { new: true }
-        );
-        return res.send('Item added');
+        const user = await User.findOne({userId});
+
+        if (!user) {
+            return res.json({message: "User not found", error: error, userId: userId});
+        }
+
+        user.itemList.push(newitem);
+        await user.save();
+        return res.json({ message: 'Item added', data: user, userId: userId});
       } catch (error) {
-        return res.status(500).send('Error adding item');
+        return res.json({message: "Error adding item", error: error});
       }
 });
 
+app.delete('/remove-item/:index', keycloak.protect(), async (req, res) => {
+    const userId = req.kauth.grant.access_token.content.sub.toString();
+    const index = req.params.index;
+    try {
+        const user = await User.findOne({userId});
+        if (!user) {
+            return res.json({message: "User not found", error: error, userId: userId});
+        }
+        if (index < 0 || index >= user.itemList.length) {
+            return res.json({message: "Index out of bounds", error: error, userId: userId});
+        }
+        user.itemList.splice(index, 1);
+        await user.save();
+        return res.json({ message: 'Item removed', data: user, userId: userId});
+    } catch (error) {
+        return res.json({message: "Error removing item", error: error});
+    }
+});
+
 app.use('*', (req, res) => {
-    res.send('Route Not found!');
+    res.json({message: "Not found", error: 404});
 });
 
 app.listen(port, () => {
