@@ -24,8 +24,6 @@ services:
         DB_PASSWORD: password
         KEYCLOAK_USER: admin
         KEYCLOAK_PASSWORD: Pa55w0rd
-        # Uncomment the line below if you want to specify JDBC parameters. The parameter below is just an example, and it shouldn't be used in production without knowledge. It is highly recommended that you read the PostgreSQL JDBC driver documentation in order to use it.
-        #JDBC_PARAMS: "ssl=true"
       ports:
         - 8080:8080
       depends_on:
@@ -43,8 +41,8 @@ services:
         - "3000"
       ports:
         - "3000:3000"
-      #command: "npm start"
       command: tail -F anything
+      #command: node app.js
       links:
         - mongodb
   mongodb:
@@ -53,16 +51,24 @@ services:
         - 27017:27017
       volumes:
         - ./mongodb:/data/db
-      # environment:
-      #     MONGO_INITDB_ROOT_USERNAME: root
-      #     MONGO_INITDB_ROOT_PASSWORD: rootpassword
   mongo-express:
     image: mongo-express
     ports:
       - 8084:8081
     environment:
-      #ME_CONFIG_MONGODB_ADMINUSERNAME: root
-      #ME_CONFIG_MONGODB_ADMINPASSWORD: rootpassword
-      #ME_CONFIG_MONGODB_URL: mongodb://root:rootpassword@mongodb:27017/
       ME_CONFIG_MONGODB_URL: mongodb://mongodb:27017/
-# check log in mongo-express container : config.js warning ! (admin:pass)
+  react:
+      image: "node"
+      user: "node"
+      working_dir: /home/node/app/react-front
+      container_name: react
+      environment:
+        - NODE_ENV=dev
+      volumes:
+        - ./react:/home/node/app
+      expose:
+        - "4000"
+      ports:
+        - 4000:3000
+      command: tail -F anything
+      #command: npm run dev

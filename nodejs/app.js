@@ -40,12 +40,14 @@ app.get('/', (req, res) => {
 app.get('/get-items', keycloak.protect(), async (req, res) => {
     const userId = req.kauth.grant.access_token.content.sub.toString();
     try {
-        const user = await User.findOne({ userId: "6da565e1-dc72-487c-9160-92c44e7ccb0e" });
+        const user = await User.findOne({ userId });
         if (!user) {
-            return res.json({message: "User not found", error: error});
+            res.status(404);
+            return res.json({message: "User not found", userId: userId});
         }
-        return res.json({userId: userId, message:"List retrieved", data: user.itemList || []});
+        return res.json({userId: userId, message:"List retrieved", itemList: user.itemList || []});
     } catch (error) {
+        res.status(500);
         return res.json({message: "Get list error", error: error});
     }
 });
@@ -57,6 +59,7 @@ app.post('/newUser', keycloak.protect(), async (req, res) => {
         const result = await newuser.save();
         return res.json({message: "User initialized", userId: userId, data: result});
     } catch (error) {
+        res.status(500);
         return res.json({message: "Error creating user", error: error});
     }
 });
@@ -65,20 +68,23 @@ app.post('/newUser', keycloak.protect(), async (req, res) => {
 app.post('/add-item', keycloak.protect(), async (req, res) => {
     const userId = req.kauth.grant.access_token.content.sub.toString();
     const newitem = req.body?.newitem;
-    if (!newitem) {
-        return res.json({message: "No item provided", error: error, userId: userId})
+    if (!newitem || newitem === "") {
+        res.status(400);
+        return res.json({message: "No item provided", userId: userId})
     }
     try {
-        const user = await User.findOne({userId});
+        const user = await User.findOne({ userId });
 
         if (!user) {
-            return res.json({message: "User not found", error: error, userId: userId});
+            res.status(404);
+            return res.json({message: "User not found", userId: userId});
         }
 
         user.itemList.push(newitem);
         await user.save();
         return res.json({ message: 'Item added', data: user, userId: userId});
       } catch (error) {
+        res.status(500);
         return res.json({message: "Error adding item", error: error});
       }
 });
@@ -87,22 +93,26 @@ app.delete('/remove-item/:index', keycloak.protect(), async (req, res) => {
     const userId = req.kauth.grant.access_token.content.sub.toString();
     const index = req.params.index;
     try {
-        const user = await User.findOne({userId});
+        const user = await User.findOne({ userId });
         if (!user) {
-            return res.json({message: "User not found", error: error, userId: userId});
+            res.status(404);
+            return res.json({message: "User not found", userId: userId});
         }
         if (index < 0 || index >= user.itemList.length) {
-            return res.json({message: "Index out of bounds", error: error, userId: userId});
+            res.status(400);
+            return res.json({message: "Index out of bounds", userId: userId});
         }
         user.itemList.splice(index, 1);
         await user.save();
         return res.json({ message: 'Item removed', data: user, userId: userId});
     } catch (error) {
+        res.status(500);
         return res.json({message: "Error removing item", error: error});
     }
 });
 
 app.use('*', (req, res) => {
+    res.status(404);
     res.json({message: "Not found", error: 404});
 });
 
