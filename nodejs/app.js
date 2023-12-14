@@ -1,7 +1,7 @@
 import express from 'express';
 import Keycloak from 'keycloak-connect';
 import session from 'express-session';
-import db from './mongodb/conn.mjs';
+import db from './mongodb-config/conn.mjs';
 import User from './models/user.js';
 import cors from 'cors';
 
