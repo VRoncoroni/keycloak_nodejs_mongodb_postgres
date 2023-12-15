@@ -6,8 +6,6 @@ const client = new Keycloak({
     url: 'http://localhost:8080/auth',
     realm: 'MyRealm',
     clientId: 'node-client',
-    // "code-challenge-method": "S256",
-    // "pkce-method": "S256",
 });    
 
 const useAuth = () => {
