@@ -6,6 +6,8 @@ const client = new Keycloak({
     url: 'http://localhost:8080/auth',
     realm: 'MyRealm',
     clientId: 'node-client',
+    // "code-challenge-method": "S256",
+    // "pkce-method": "S256",
 });    
 
 const useAuth = () => {
@@ -21,7 +23,7 @@ const useAuth = () => {
             try{
                 const result = await client.init({
                     onLoad: "login-required",
-                    
+                    pkceMethod: "S256",
                 })
                 setLogin(result);
                 setToken(client.token ?? null);
@@ -29,10 +31,7 @@ const useAuth = () => {
                 notify(500, "Keycloak Server Error");
             }
         }
-
-        loginRequired().catch((e) => {
-                console.log("erreur :" + e);
-        });
+        loginRequired();
     }, []);
 
     const handleLogout = () => {
