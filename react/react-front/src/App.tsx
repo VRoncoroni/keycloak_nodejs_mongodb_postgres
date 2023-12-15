@@ -4,12 +4,12 @@ import useAuth from './hooks/useAuth';
 import axios from 'axios';
 import { InfinitySpin } from  'react-loader-spinner';
 import { Item, InputItem } from './components';
+import { notify } from './utils';
 
 const App = () => {
   const {isLogin, token, logout, name} = useAuth();
   const isRun = useRef(false);
   const [list, setList] = useState<string[] | null>(null);
-
 
   const updateList = async () => {
     const config = {
@@ -17,9 +17,14 @@ const App = () => {
         authorization: `Bearer ${token}`,
       },
     };
-    const result = await axios.get("http://localhost:3000/get-items", config);
-    if(result.status == 200){
+    try {
+      const result = await axios.get("http://localhost:3000/get-items", config);
+      notify(result.status, result.data.message);
       setList(result.data.itemList);
+    } catch (error: unknown) {
+      if(axios.isAxiosError(error) && error.response){
+        notify(error.response.status, error.response.data.message);
+      } else notify(500, "Internal Server Error");
     }
   }
 
@@ -31,14 +36,21 @@ const App = () => {
     updateList();
   }, [token]);
 
-  const newUser = async () => {
+  const initUser = async () => {
     const config = {
       headers: {
         authorization: `Bearer ${token}`,
       },
     };
-    await axios.post("http://localhost:3000/newUser", {}, config);
-    await updateList();
+    try{
+      const result = await axios.post("http://localhost:3000/init-user", {}, config);
+      notify(result.status, result.data.message);
+      await updateList();
+    } catch (error: unknown) {
+      if(axios.isAxiosError(error) && error.response){
+        notify(error.response.status, error.response.data.message);
+      } else notify(500, "Internal Server Error");
+    }
   }
 
   return isLogin ? (
@@ -47,7 +59,7 @@ const App = () => {
       <h3>{name ?? ""}</h3>
       <div className="list">
         {list === null ?
-        <button onClick={() => newUser()} >New User : Create List</button>
+        <button onClick={() => initUser()} >New User : Create List</button>
           :
         list.map((item, index) => (
           <Item

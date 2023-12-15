@@ -3,7 +3,7 @@ import axios from "axios";
 import {IoIosAdd} from "react-icons/io";
 import "../global.css";
 import "./style.css";
-
+import { notify } from "../../utils"
 
 interface InputItemProps {
     token: string | null;
@@ -20,15 +20,20 @@ interface InputItemProps {
           authorization: `Bearer ${props.token}`,
         },
       };
-      const result = await axios.post(
-        "http://localhost:3000/add-item",
-        {newitem: itemName},
-        config
-      );
-      if (result.status === 200) {
+      try {
+        const result = await axios.post(
+          "http://localhost:3000/add-item",
+          {newitem: itemName},
+          config
+        );
+        notify(result.status, result.data.message);
         props.setList((prev) => [...prev!, itemName]);
+        setItemName("");
+      } catch (error: unknown) {
+        if(axios.isAxiosError(error) && error.response){
+          notify(error.response.status, error.response.data.message);
+        } else notify(500, "Internal Server Error");
       }
-      setItemName("");
     }
     return (
       <div className="additem">

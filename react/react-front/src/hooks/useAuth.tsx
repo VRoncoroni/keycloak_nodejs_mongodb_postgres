@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import Keycloak from "keycloak-js";
+import { notify } from "../utils";
 
 const client = new Keycloak({
     url: 'http://localhost:8080/auth',
@@ -17,12 +18,16 @@ const useAuth = () => {
         isRun.current = true;
 
         const loginRequired = async () => {
+            try{
                 const result = await client.init({
                     onLoad: "login-required",
                     
                 })
                 setLogin(result);
                 setToken(client.token ?? null);
+            } catch (error: unknown) {
+                notify(500, "Keycloak Server Error");
+            }
         }
 
         loginRequired().catch((e) => {

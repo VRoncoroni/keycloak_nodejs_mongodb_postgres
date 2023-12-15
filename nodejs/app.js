@@ -21,7 +21,6 @@ app.use( session({
   store: memoryStore,
 } ))
 
-// Middleware configuration loaded from keycloak.json file.
 const keycloak = new Keycloak({
     store: memoryStore
 });
@@ -52,7 +51,7 @@ app.get('/get-items', keycloak.protect(), async (req, res) => {
     }
 });
 
-app.post('/newUser', keycloak.protect(), async (req, res) => {
+app.post('/init-user', keycloak.protect(), async (req, res) => {
     try{
         const userId = req.kauth.grant.access_token.content.sub.toString();
         const newuser = new User({userId: userId, itemList: []});
@@ -60,7 +59,7 @@ app.post('/newUser', keycloak.protect(), async (req, res) => {
         return res.json({message: "User initialized", userId: userId, data: result});
     } catch (error) {
         res.status(500);
-        return res.json({message: "Error creating user", error: error});
+        return res.json({message: "Error initializing user", error: error});
     }
 });
 

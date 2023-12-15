@@ -3,6 +3,7 @@ import axios from 'axios';
 import { IoIosClose } from "react-icons/io";
 import "../global.css";
 import "./style.css";
+import { notify } from '../../utils';
 
 interface ItemProps {
     index: number;
@@ -15,17 +16,23 @@ interface ItemProps {
   const Item:FC<ItemProps> = (props) => {
   
     const removeItem = async () => {
-      const result = await axios.delete(`http://localhost:3000/remove-item/${props.index}`, {
-        headers: {
-          authorization: `Bearer ${props.token}`,
-        }
-      });
-      if (result.status === 200){
+
+      try {
+        const result = await axios.delete(`http://localhost:3000/remove-item/${props.index}`, {
+          headers: {
+            authorization: `Bearer ${props.token}`,
+          }
+        });
+        notify(result.status, result.data.message);
         props.setList((prev) => {
           const newList = [...prev!];
           newList.splice(props.index, 1);
           return newList;
         });
+      } catch (error: unknown) {
+        if(axios.isAxiosError(error) && error.response){
+          notify(error.response.status, error.response.data.message);
+        } else notify(500, "Internal Server Error");
       }
     }
   
